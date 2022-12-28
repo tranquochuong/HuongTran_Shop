@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+
+<head>
+    <th:block th:replace="/cp/layout/head :: head-boostrap"></th:block>
+    <th:block th:replace="/cp/layout/head :: head-fontawesome"></th:block>
+    <th:block th:replace="/cp/layout/head :: head-sweetalert2"></th:block>
+    <th:block th:replace="/cp/layout/head :: head-izitoast"></th:block>
+    <link rel="stylesheet" href="/assets/css/login-style.css">
+    <title>Login</title>
+</head>
+
+<body>
+<div class="login-card-container">
+    <div class="login-card">
+        <div class="login-card-header">
+            <h1>Login</h1>
+        </div>
+        <form id="frmLogin" class="login-card-form">
+            <div class="form-item">
+                <span class="form-item-icon"><i class="fa-solid fa-user-pen"></i></span>
+                <input id="emailLogin" name="emailLogin" type="email" required autofocus>
+            </div>
+            <div class="form-item">
+                <span class="form-item-icon"><i class="fa-solid fa-key"></i></span>
+                <input id="passwordLogin" name="passwordLogin" type="password" required>
+                <span class="show-password" onclick="showPassword1()"><i class="fa-solid fa-eye"></i></span>
+            </div>
+            <div class="form-item-other">
+                <div class="checkbox">
+                    <input type="checkbox" id="rememberMeCheckBox">
+                    <label for="rememberMeCheckBox">Remember Account</label>
+                </div>
+                <a href="#">Forgot password</a>
+            </div>
+            <button id="btnLogin" type="button">Login</button>
+        </form>
+        <div class="login-card-footer">
+            <a href="/register">Create Account</a>.
+        </div>
+    </div>
+</div>
+</body>
+
+<th:block th:replace="cp/layout/script :: script-jquery"/>
+<th:block th:replace="cp/layout/script :: script-jquery-validate"/>
+<th:block th:replace="cp/layout/script :: script-boostrap"/>
+<th:block th:replace="cp/layout/script :: script-fontawesome"/>
+<th:block th:replace="cp/layout/script :: script-sweetalert2"/>
+<th:block th:replace="cp/layout/script :: script-izitoast"/>
+<th:block th:replace="cp/layout/script :: script-app-utils"/>
+
+<script>
+    const page = {
+        urls: {
+            login: App.AUTH_URL + "/login",
+        },
+        elements: {},
+        commands: {},
+        initializeEventControl: {}
+    }
+
+    page.elements.frmLogin = $("#frmLogin");
+    page.elements.emailLogin = $("#emailLogin");
+    page.elements.passwordLogin = $("#passwordLogin");
+    page.elements.btnLogin = $("#btnLogin");
+
+    page.commands.login = () => {
+        let user = {
+            username: page.elements.emailLogin.val(),
+            password: page.elements.passwordLogin.val()
+        }
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            type: "POST",
+            url: page.urls.login,
+            data: JSON.stringify(user)
+        }).done((resp) => {
+            let role = resp.roles[0].authority;
+            App.SweetAlert.redirectPage("Đăng nhập thành công.", "<b></b>", 100);
+
+            if (role === "ADMIN") {
+                setTimeout(function () {
+                    window.location.href = "/cp";
+                }, 1000);
+            }else {
+                if (role ==="USER"){
+                    setTimeout(function () {
+                        window.location.href = "/cp";
+                    }, 1000);
+                } else{
+                    setTimeout(function () {
+                        window.location.href = "/customers";
+                    }, 1000);
+                }
+            }
+
+        }).fail(function (jqXHR) {
+            if (jqXHR.responseJSON) {
+                if (jqXHR.responseJSON.message) {
+                    App.IziToast.showErrorAlertLeft(jqXHR.responseJSON.message);
+                } else {
+                    $.each(jqXHR.responseJSON, function (key, value) {
+                        App.IziToast.showErrorAlertLeft(value);
+                    });
+                }
+            } else {
+                App.IziToast.showErrorAlertLeft("Email hoặc mật khẩu không đúng. Vui lòng kiểm tra lại!");
+            }
+        });
+    }
+
+    function showPassword1() {
+        let password = document.querySelector("#passwordLogin");
+        if (password.type === "password") {
+            password.type = "text";
+        } else {
+            password.type = "password";
+        }
+    }
+
+    page.commands.loadData = () => {
+    }
+
+    page.initializeEventControl = () => {
+        page.elements.btnLogin.on("click", () => {
+            page.commands.login();
+        })
+    }
+
+    $(() => {
+        page.commands.loadData();
+        page.initializeEventControl();
+    });
+</script>
+</html>
